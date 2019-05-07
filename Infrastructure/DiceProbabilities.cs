@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure
 {
-    public class DiceProbabilities
+    public static class DiceProbabilities
     {
         public static readonly float Two = 1 / 36;
         public static readonly float Three = 2 / 36;

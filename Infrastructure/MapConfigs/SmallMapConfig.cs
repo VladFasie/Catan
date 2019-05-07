@@ -8,7 +8,9 @@ namespace Infrastructure.MapConfigs
         
         public IReadOnlyDictionary<ResourceType, int> NumberOfResources => _numberOfResources;
 
-        public IReadOnlyList<Tuple<int, int>> Coordinates => _coordinates;
+        public IReadOnlyList<Tuple<int, int>> CellCoordinates => _cellCoordinates;
+
+        public IReadOnlyList<Tuple<int, int>> SettlementsCoordinates => _settlementCoordinates;
 
         public IReadOnlyDictionary<int, int> NumbersOfNumbers => _numbersOfNumbers;
 
@@ -24,7 +26,7 @@ namespace Infrastructure.MapConfigs
                 [ResourceType.Grain] = 4
             };
 
-        private static readonly IReadOnlyList<Tuple<int, int>> _coordinates =
+        private static readonly IReadOnlyList<Tuple<int, int>> _cellCoordinates =
             new List<Tuple<int, int>>
             {
                 new Tuple<int, int>(-4, 2), new Tuple<int, int>(-4, 0), new Tuple<int, int>(-4, -2),
@@ -32,6 +34,17 @@ namespace Infrastructure.MapConfigs
                 new Tuple<int, int>(0, -4), new Tuple<int, int>(0, 2), new Tuple<int, int>(0, 0), new Tuple<int, int>(0, -2), new Tuple<int, int>(0, -4),
                 new Tuple<int, int>(2, 3), new Tuple<int, int>(2, 1), new Tuple<int, int>(2, -1), new Tuple<int, int>(2, -3),
                 new Tuple<int, int>(4, 2), new Tuple<int, int>(4, 0), new Tuple<int, int>(4, -2)
+            };
+
+        private static readonly IReadOnlyList<Tuple<int, int>> _settlementCoordinates =
+            new List<Tuple<int, int>>
+            {
+                new Tuple<int, int>(-5, 3), new Tuple<int, int>(-5, 2), new Tuple<int, int>(-5, 1), new Tuple<int, int>(-5, 0), new Tuple<int, int>(-5, -1), new Tuple<int, int>(-5, -2), new Tuple<int, int>(-5, -3),
+                new Tuple<int, int>(-3, 4), new Tuple<int, int>(-3, 3), new Tuple<int, int>(-3, 2), new Tuple<int, int>(-3, 1), new Tuple<int, int>(-3, 0), new Tuple<int, int>(-3, -1), new Tuple<int, int>(-3, -2), new Tuple<int, int>(-3, -3), new Tuple<int, int>(-3, -4),
+                new Tuple<int, int>(-1, 5), new Tuple<int, int>(-1, 4), new Tuple<int, int>(-1, 3), new Tuple<int, int>(-1, 2), new Tuple<int, int>(-1, 1), new Tuple<int, int>(-1, 0), new Tuple<int, int>(-1, -1), new Tuple<int, int>(-1, -2), new Tuple<int, int>(-1, -3), new Tuple<int, int>(-1, -4), new Tuple<int, int>(-1, -5),
+                new Tuple<int, int>(1, 5), new Tuple<int, int>(1, 4), new Tuple<int, int>(1, 3), new Tuple<int, int>(1, 2), new Tuple<int, int>(1, 1), new Tuple<int, int>(1, 0), new Tuple<int, int>(1, -1), new Tuple<int, int>(1, -2), new Tuple<int, int>(1, -3), new Tuple<int, int>(1, -4), new Tuple<int, int>(1, -5),
+                new Tuple<int, int>(3, 4), new Tuple<int, int>(3, 3), new Tuple<int, int>(3, 2), new Tuple<int, int>(3, 1), new Tuple<int, int>(3, 0), new Tuple<int, int>(3, -1), new Tuple<int, int>(3, -2), new Tuple<int, int>(3, -3), new Tuple<int, int>(3, -4),
+                new Tuple<int, int>(5, 3), new Tuple<int, int>(5, 2), new Tuple<int, int>(5, 1), new Tuple<int, int>(5, 0), new Tuple<int, int>(5, -1), new Tuple<int, int>(5, -2), new Tuple<int, int>(5, -3)
             };
 
         private static readonly IReadOnlyDictionary<int, int> _numbersOfNumbers =

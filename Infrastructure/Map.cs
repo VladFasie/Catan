@@ -5,8 +5,7 @@ namespace Infrastructure
     public sealed class Map
     {
         public MapSize Size { get; set; }
-        public IReadOnlyCollection<Cell> Cells { get; set; }
-
+        public IReadOnlyList<Cell> Cells { get; set; }
         public override string ToString()
         {
             var result = "";

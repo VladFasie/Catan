@@ -7,7 +7,8 @@ namespace Infrastructure.MapConfigs
     {
         public IReadOnlyDictionary<ResourceType, int> NumberOfResources => throw new NotImplementedException();
 
-        public IReadOnlyList<Tuple<int, int>> Coordinates => throw new NotImplementedException();
+        public IReadOnlyList<Tuple<int, int>> CellCoordinates => throw new NotImplementedException();
+        public IReadOnlyList<Tuple<int, int>> SettlementsCoordinates => throw new NotImplementedException();
 
         public IReadOnlyDictionary<int, int> NumbersOfNumbers => throw new NotImplementedException();
     }
