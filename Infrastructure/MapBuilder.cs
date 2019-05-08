@@ -16,29 +16,26 @@ namespace Infrastructure
             else if (size == MapSize.Big)
                 config = new BigMapConfig();
 
-            var cells = GenerateCells(config).Shuffle();
+            var resources = GenerateResourceTypes(config).Shuffle();
             var numbers = GenerateNumbers(config).Shuffle();
-            MatchCellsWithNumbers(cells, numbers);
+            var cells = MatchCellsWithNumbers(resources, numbers);
 
             return new Map
             {
                 Size = size,
-                Cells = cells.ToList()
+                Cells = cells.AsReadOnly()
             };
         }
 
-        private static ICollection<Cell> GenerateCells(IMapConfig config)
+        private static ICollection<ResourceType> GenerateResourceTypes(IMapConfig config)
         {
-            var result = new List<Cell>();
+            var result = new List<ResourceType>();
 
             foreach (var cellType in config.NumberOfResources.Keys)
             {
                 var number = config.NumberOfResources[cellType];
                 for (var i = 0; i < number; ++i)
-                    result.Add(new Cell
-                    {
-                        Type = cellType
-                    });
+                    result.Add(cellType);
             }
 
             return result;
@@ -58,22 +55,25 @@ namespace Infrastructure
             return result;
         }
 
-        private static void MatchCellsWithNumbers(IEnumerable<Cell> cells, IEnumerable<int> numbers)
+        private static List<Cell> MatchCellsWithNumbers(IEnumerable<ResourceType> resources, IEnumerable<int> numbers)
         {
-            var cellCount = cells.Count();
+            var cellCount = resources.Count();
             var numberCount = numbers.Count();
-
             if (cellCount <= numberCount)
                 throw new Exception("number of cells must be greather than number of numbers");
 
-            var idx = 0;
-            foreach (var cell in cells)
-            {
-                if (cell.Type == ResourceType.Desert)
-                    continue;
+            var result = new List<Cell>();
 
-                cell.Number = numbers.ElementAt(idx++);
+            var idx = 0;
+            foreach (var resource in resources)
+            {
+                if (resource == ResourceType.Desert)
+                    result.Add(new Cell(resource, 0));
+                else
+                    result.Add(new Cell(resource, numbers.ElementAt(idx++)));
             }
+
+            return result;
         }
     }
 }

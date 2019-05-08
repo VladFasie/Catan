@@ -2,6 +2,7 @@
 using Infrastructure.MapConfigs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Infrastructure
 {
@@ -13,8 +14,8 @@ namespace Infrastructure
             {
                 new Tuple<int, int>(-2, -1),
                 new Tuple<int, int>(-2, 1),
-                new Tuple<int, int>(0, -1),
-                new Tuple<int, int>(0, 1),
+                new Tuple<int, int>(0, -2),
+                new Tuple<int, int>(0, 2),
                 new Tuple<int, int>(2, -1),
                 new Tuple<int, int>(2, 1)
             };
@@ -27,46 +28,92 @@ namespace Infrastructure
                 new Tuple<int, int>(1, 0),
                 new Tuple<int, int>(1, 1),
             };
-        private static readonly List<Tuple<int, int>> _settlementToCellOffset = new List<Tuple<int, int>>();
-
-        public static List<Cell> NeighbourCells(Tuple<int, int> cell, Map map)
+        private static readonly List<Tuple<int, int>> _settlementToCellOffset = _cellToSettlementOffset;
+        private static readonly List<Tuple<int, int>> _settlementToSettlementPartialOffset = new List<Tuple<int, int>>
         {
-            var result = new List<Cell>();
-            IMapConfig config = ConfigByMapSize(map);
+            new Tuple<int, int>(0, -1),
+            new Tuple<int, int>(0, 1)
+        };
 
-            foreach (var t in _cellToCellOffset)
+        public static Tuple<int, int> CellCoordinatesByIndexAndSize(int idx, MapSize size)
+        {
+            IMapConfig config = ConfigByMapSize(size);
+            return config.CellCoordinates[idx];
+        }
+
+        public static IEnumerable<Tuple<int, int>> NeighbourCellsCoordinatesForCell(Tuple<int, int> cell, MapSize size)
+        {
+            IMapConfig config = ConfigByMapSize(size);
+            var offsets = ApplyOffsets(cell, _cellToCellOffset);
+
+            return offsets.Intersect(config.CellCoordinates);
+        }
+
+        public static IEnumerable<Tuple<int, int>> NeighbourSettlementsCoordinatesForCell(Tuple<int, int> cell, MapSize size)
+        {
+            IMapConfig config = ConfigByMapSize(size);
+            var offsets = ApplyOffsets(cell, _cellToSettlementOffset);
+
+            return offsets.Intersect(config.SettlementsCoordinates);
+        }
+
+        public static IEnumerable<Tuple<int, int>> NeighbourCellsCoordinatesForSettlement(Tuple<int, int> settlement, MapSize size)
+        {
+            IMapConfig config = ConfigByMapSize(size);
+            var offsets = ApplyOffsets(settlement, _settlementToCellOffset);
+
+            return offsets.Intersect(config.CellCoordinates);
+        }
+
+        public static IEnumerable<Tuple<int, int>> NeighbourSettlementsCoordinatesForSettlement(Tuple<int, int> settlement, MapSize size)
+        {
+            IMapConfig config = ConfigByMapSize(size);
+            var offsets = ApplyOffsets(settlement, _settlementToSettlementPartialOffset);
+
+            var result = offsets.Intersect(config.CellCoordinates);
+
+            var left = new Tuple<int, int>(settlement.Item1 - 1, settlement.Item2);
+            var right = new Tuple<int, int>(settlement.Item1 - 1, settlement.Item2);
+
+            var hasCellInLeft = config.CellCoordinates.IndexOf(left) != -1;
+            var hasCellInRight = config.CellCoordinates.IndexOf(left) != -1;
+
+            if (!hasCellInLeft)
             {
-                var newCoord = new Tuple<int, int>(cell.Item1 + t.Item1, cell.Item2 + t.Item2);
-                var idx = config.CellCoordinates.IndexOf(newCoord);
-                if (idx != -1)
-                    result.Add(map.Cells[idx]);
+                var possibleLeftSettlement = new Tuple<int, int>(settlement.Item1 - 2, settlement.Item2);
+                var settlementExists = config.SettlementsCoordinates.IndexOf(possibleLeftSettlement) != -1;
+                if (settlementExists)
+                    result.Append(possibleLeftSettlement);
+            }
+
+            if (!hasCellInLeft)
+            {
+                var possibleRightSettlement = new Tuple<int, int>(settlement.Item1 + 2, settlement.Item2);
+                var settlementExists = config.SettlementsCoordinates.IndexOf(possibleRightSettlement) != -1;
+                if (settlementExists)
+                    result.Append(possibleRightSettlement);
             }
 
             return result;
         }
 
-        public static List<Tuple<int, int>> NeighbourSettlementsCoordinates(Tuple<int, int> cell, Map map)
+        private static IMapConfig ConfigByMapSize(MapSize size)
         {
-            var result = new List<Tuple<int, int>>();
-            IMapConfig config = ConfigByMapSize(map);
-
-            foreach (var t in _cellToSettlementOffset)
-            {
-                var newCoord = new Tuple<int, int>(cell.Item1 + t.Item1, cell.Item2 + t.Item2);
-                var idx = config.CellCoordinates.IndexOf(newCoord);
-                if (idx != -1)
-                    result.Add(newCoord);
-            }
-
-            return result;
-        }
-
-        private static IMapConfig ConfigByMapSize(Map map)
-        {
-            if (map.Size == MapSize.Small)
+            if (size == MapSize.Small)
                 return _smallConfig;
 
             return _bigConfig;
+        }
+
+        private static List<Tuple<int, int>> ApplyOffsets(Tuple<int, int> coord, List<Tuple<int, int>> offsets)
+        {
+            var result = new List<Tuple<int, int>>();
+            foreach (var offset in offsets)
+            {
+                var newCoord = new Tuple<int, int>(coord.Item1 + offset.Item1, coord.Item2 + offset.Item2);
+                result.Add(newCoord);
+            }
+            return result;
         }
     }
 }

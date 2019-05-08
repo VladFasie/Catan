@@ -6,13 +6,40 @@
         {
             get
             {
-                return Hay + Clay + Wood + Stone + Sheep;
+                return Grain + Clay + Wood + Ore + Wool;
             }
         }
-        public int Hay { get; set; }
+        public int Grain { get; set; }
         public int Clay { get; set; }
         public int Wood { get; set; }
-        public int Stone { get; set; }
-        public int Sheep { get; set; }
+        public int Ore { get; set; }
+        public int Wool { get; set; }
+
+        public override string ToString()
+        {
+            var result = "[";
+
+            result += "Clay: ";
+            result += Clay;
+            result += ", ";
+
+            result += "Wood: ";
+            result += Wood;
+            result += ", ";
+
+            result += "Grain: ";
+            result += Grain;
+            result += ", ";
+
+            result += "Wool: ";
+            result += Wool;
+            result += ", ";
+
+            result += "Ore: ";
+            result += Ore;
+
+            result += "]";
+            return result;
+        }
     }
 }

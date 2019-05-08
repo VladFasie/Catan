@@ -2,22 +2,18 @@
 {
     public class Cell
     {
-        public ResourceType Type { get; set; }
-        public int Number { get; set; }
+        public ResourceType Type { get; }
+        public int Number { get; }
+
+        public Cell(ResourceType type, int number)
+        {
+            Type = type;
+            Number = number;
+        }
 
         public override string ToString()
         {
             return $"[{Type.ToString()} {Number}]";
         }
-
-        ///* index
-        // * 
-        // *        1
-        // *  0           2
-        // *      this
-        // *  5           3
-        // *        4
-        // */
-        //public IEnumerable<Cell> Neighbours { get; set; }
     }
 }
