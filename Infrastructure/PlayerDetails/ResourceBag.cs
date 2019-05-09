@@ -2,13 +2,7 @@
 {
     public class ResourceBag
     {
-        public int Total
-        {
-            get
-            {
-                return Grain + Clay + Wood + Ore + Wool;
-            }
-        }
+        public int Total => Grain + Clay + Wood + Ore + Wool;
         public int Grain { get; set; }
         public int Clay { get; set; }
         public int Wood { get; set; }
@@ -40,6 +34,15 @@
 
             result += "]";
             return result;
+        }
+
+        public void Substract(ReadonlyResourceBag bag)
+        {
+            Grain -= bag.Grain;
+            Clay -= bag.Clay;
+            Wood -= bag.Wood;
+            Ore -= bag.Ore;
+            Wool -= bag.Wool;
         }
     }
 }

@@ -9,7 +9,11 @@ namespace Infrastructure
     {
         static void Main(string[] args)
         {
-            
+            var map = MapBuilder.GetMap(MapSize.Small);
+            var game = new Game(map);
+
+            game.InitialSetup();
+            game.RollDicesAndGiveResources();
         }
     }
 }
