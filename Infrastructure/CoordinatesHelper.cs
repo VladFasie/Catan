@@ -37,13 +37,25 @@ namespace Infrastructure
 
         public static Tuple<int, int> CellCoordinatesByIndexAndSize(int idx, MapSize size)
         {
-            IMapConfig config = ConfigByMapSize(size);
+            var config = ConfigByMapSize(size);
             return config.CellCoordinates[idx];
         }
 
+        public static int CellIndexByCoordinates(Tuple<int, int> coord, MapSize size)
+        {
+            var config = ConfigByMapSize(size);
+            return config.CellCoordinates.IndexOf(coord);
+        }
+        public static bool SettlementCoordinatesAreValid(Tuple<int, int> coord, MapSize size)
+        {
+            var config = ConfigByMapSize(size);
+            return config.SettlementsCoordinates.Contains(coord);
+        }
+
+        #region Neighbour
         public static IEnumerable<Tuple<int, int>> NeighbourCellsCoordinatesForCell(Tuple<int, int> cell, MapSize size)
         {
-            IMapConfig config = ConfigByMapSize(size);
+            var config = ConfigByMapSize(size);
             var offsets = ApplyOffsets(cell, _cellToCellOffset);
 
             return offsets.Intersect(config.CellCoordinates);
@@ -51,7 +63,7 @@ namespace Infrastructure
 
         public static IEnumerable<Tuple<int, int>> NeighbourSettlementsCoordinatesForCell(Tuple<int, int> cell, MapSize size)
         {
-            IMapConfig config = ConfigByMapSize(size);
+            var config = ConfigByMapSize(size);
             var offsets = ApplyOffsets(cell, _cellToSettlementOffset);
 
             return offsets.Intersect(config.SettlementsCoordinates);
@@ -59,7 +71,7 @@ namespace Infrastructure
 
         public static IEnumerable<Tuple<int, int>> NeighbourCellsCoordinatesForSettlement(Tuple<int, int> settlement, MapSize size)
         {
-            IMapConfig config = ConfigByMapSize(size);
+            var config = ConfigByMapSize(size);
             var offsets = ApplyOffsets(settlement, _settlementToCellOffset);
 
             return offsets.Intersect(config.CellCoordinates);
@@ -67,7 +79,7 @@ namespace Infrastructure
 
         public static IEnumerable<Tuple<int, int>> NeighbourSettlementsCoordinatesForSettlement(Tuple<int, int> settlement, MapSize size)
         {
-            IMapConfig config = ConfigByMapSize(size);
+            var config = ConfigByMapSize(size);
             var offsets = ApplyOffsets(settlement, _settlementToSettlementPartialOffset);
 
             var result = offsets.Intersect(config.CellCoordinates);
@@ -96,6 +108,7 @@ namespace Infrastructure
 
             return result;
         }
+        #endregion
 
         private static IMapConfig ConfigByMapSize(MapSize size)
         {

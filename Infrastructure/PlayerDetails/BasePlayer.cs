@@ -5,7 +5,7 @@ namespace Infrastructure.PlayerDetails
 {
     public abstract class BasePlayer
     {
-        public ReadonlyResourceBag Resources { get; set; }
+        public ReadOnlyResourceBag Resources { get; set; }
         public PlayerColor Color { get; }
 
         public BasePlayer(PlayerColor color)
@@ -13,10 +13,10 @@ namespace Infrastructure.PlayerDetails
             Color = color;
         }
 
-        public abstract ReadonlyResourceBag DropResources(int toDrop);
+        public abstract ReadOnlyResourceBag DropResources(int toDrop);
 
-        public abstract Tuple<Village, Road> PickFirstSettlementAndRoad(Map map);
+        public abstract Tuple<Village, Road> PickFirstSettlementAndRoad(ReadOnlyMap map);
 
-        public abstract Tuple<Village, Road> PickSecondSettlementAndRoad(Map map);
+        public abstract Tuple<Village, Road> PickSecondSettlementAndRoad(ReadOnlyMap map);
     }
 }

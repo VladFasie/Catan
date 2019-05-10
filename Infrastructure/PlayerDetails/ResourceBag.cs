@@ -36,7 +36,7 @@
             return result;
         }
 
-        public void Substract(ReadonlyResourceBag bag)
+        public void Substract(ReadOnlyResourceBag bag)
         {
             Grain -= bag.Grain;
             Clay -= bag.Clay;

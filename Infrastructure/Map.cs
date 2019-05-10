@@ -1,6 +1,7 @@
 ﻿using Infrastructure.PlayerDetails;
 using Infrastructure.Settlements;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Infrastructure
@@ -8,13 +9,22 @@ namespace Infrastructure
     public sealed class Map
     {
         public MapSize Size { get; set; }
-        public IReadOnlyList<Cell> Cells { get; set; }
-        public IReadOnlyList<BaseSettlement> Settlements { get; }
-        public IReadOnlyList<Road> Roads { get; }
+        public IList<Cell> Cells { get; set; }
+        public IList<BaseSettlement> Settlements { get; set; }
+        public IList<Road> Roads { get; set; }
 
         public int PointsFor(PlayerColor color)
         {
             return Settlements.Where(settlement => settlement.Color == color).Select(settlement => settlement.Points).Sum();
+        }
+
+        public ReadOnlyMap AsReadOnly()
+        {
+            var cells = new ReadOnlyCollection<Cell>(Cells);
+            var settlements = new ReadOnlyCollection<BaseSettlement>(Settlements);
+            var roads = new ReadOnlyCollection<Road>(Roads);
+
+            return new ReadOnlyMap(Size, cells, settlements, roads);
         }
 
         public override string ToString()

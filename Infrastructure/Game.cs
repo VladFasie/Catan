@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Extensions;
 using Infrastructure.PlayerDetails;
+using Infrastructure.Settlements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace Infrastructure
     public sealed class Game
     {
         public IEnumerable<BasePlayer> Players => _playerDict.Values.Select(x => x.Item1);
+        public IReadOnlyList<PlayerColor> AscendingOrder { get; private set; }
+        public int NumberOfPlayers => _playerDict.Keys.Count;
         public Stack<Tuple<int, int>> DicesHistory { get; }
 
         public Map Map { get; }
@@ -30,30 +33,113 @@ namespace Infrastructure
             _playerDict[player.Color] = new Tuple<BasePlayer, ResourceBag>(player, resources);
         }
 
-        public void InitialSetup()
+        private IEnumerable<Tuple<PlayerColor, int>> GenerateOrder(IEnumerable<PlayerColor> colors)
         {
-            var order = new List<Tuple<BasePlayer, int>>();
-            foreach (var player in Players)
+            var numbers = new List<int>();
+            for (var i = 0; i < colors.Count(); ++i)
             {
                 var dices = RollDices();
                 var sum = dices.Item1 + dices.Item2;
-                order.Add(new Tuple<BasePlayer, int>(player, sum));
+                numbers.Add(sum);
             }
 
-            order.Sort();
-            // TODO treat draws
+            return colors.Zip(numbers, (color, number) => new Tuple<PlayerColor, int>(color, number)).OrderBy(x => x.Item2);
+        }
 
-            for (var i = 0; i < order.Count; ++i)
+        private IEnumerable<PlayerColor> FindDrawsAndRemoveThem(IEnumerable<Tuple<PlayerColor, int>> order)
+        {
+            var counter = new int[13];
+            for (var i = 2; i <= 12; ++i)
+                counter[i] = order.Count(x => x.Item2 == i);
+
+            var result = new List<PlayerColor>();
+            for (var i = 2; i <= 12; ++i)
             {
-                var player = order[i].Item1;
-                player.PickFirstSettlementAndRoad(Map);
+                if (counter[i] == 1)
+                {
+                    result.Add(order.First(x => x.Item2 == i).Item1);
+                    continue;
+                }
+
+                if (counter[i] == 0)
+                    continue;
+
+                var draws = order.Where(x => x.Item2 == i).Select(x => x.Item1);
+                var tempOrder = GenerateOrder(draws);
+
+                foreach (var tmp in FindDrawsAndRemoveThem(tempOrder))
+                    result.Add(tmp);
             }
 
-            for (var i = order.Count - 1; i >= 0; --i)
+            return result;
+        }
+
+        public void InitialSetup()
+        {
+            AscendingOrder = FindDrawsAndRemoveThem(GenerateOrder(_playerDict.Keys)).ToList().AsReadOnly();
+
+            foreach (var color in AscendingOrder.Reverse())
             {
-                var player = order[i].Item1;
-                player.PickSecondSettlementAndRoad(Map);
+                var buildings = _playerDict[color].Item1.PickFirstSettlementAndRoad(Map.AsReadOnly());
+                InitialBuild(buildings);
             }
+
+            foreach (var color in AscendingOrder)
+            {
+                var buildings = _playerDict[color].Item1.PickSecondSettlementAndRoad(Map.AsReadOnly());
+                InitialBuild(buildings);
+
+                var neighbourCells = CoordinatesHelper.NeighbourCellsCoordinatesForSettlement(buildings.Item1.Coordinates, Map.Size);
+                foreach (var cellCoord in neighbourCells)
+                {
+                    var cell = Map.Cells[CoordinatesHelper.CellIndexByCoordinates(cellCoord, Map.Size)];
+                    AddResources(_playerDict[color].Item2, cell, buildings.Item1.Points);
+                }
+            }
+        }
+
+        private void InitialBuild(Tuple<Village, Road> buildings)
+        {
+            var settlement = buildings.Item1;
+            var road = buildings.Item2;
+
+            if (!road.A.Equals(settlement.Coordinates) && !road.B.Equals(settlement.Coordinates))
+                throw new Exception("road must be connected with village");
+
+            BuildRoad(road);
+            BuildVillage(settlement);
+        }
+
+        private void BuildVillage(Village village)
+        {
+            if (!VillageIsValid(village))
+                throw new Exception("road is not good");
+
+            Map.Settlements.Add(village);
+        }
+
+        private bool VillageIsValid(Village village)
+        {
+            // is settlement coord & empty place & no neighbours occupied
+            return CoordinatesHelper.SettlementCoordinatesAreValid(village.Coordinates, Map.Size)   &&
+                (!Map.Settlements.Select(x => x.Coordinates).Contains(village.Coordinates))         &&
+                CoordinatesHelper.NeighbourSettlementsCoordinatesForSettlement(village.Coordinates, Map.Size).
+                    All(x => !Map.Settlements.Select(y => y.Coordinates).Contains(x));
+        }
+
+        private void BuildRoad(Road road)
+        {
+            if (!RoadIsValid(road))
+                throw new Exception("road is not good");
+
+            Map.Roads.Add(road);
+        }
+
+        private bool RoadIsValid(Road road)
+        {
+            return CoordinatesHelper.SettlementCoordinatesAreValid(road.A, Map.Size) &&
+                CoordinatesHelper.SettlementCoordinatesAreValid(road.B, Map.Size) &&
+                CoordinatesHelper.NeighbourSettlementsCoordinatesForSettlement(road.A, Map.Size).Contains(road.B);
         }
 
         public void RollDicesAndGiveResources()
@@ -87,18 +173,22 @@ namespace Infrastructure
                         if (!settlemenstCoord.Contains(settlement.Coordinates))
                             continue;
 
-                        var count = settlement.Points;
-                        switch (cell.Type)
-                        {
-                            case ResourceType.Wool: resources.Wool += count; break;
-                            case ResourceType.Ore: resources.Ore += count; break;
-                            case ResourceType.Grain: resources.Grain += count; break;
-                            case ResourceType.Wood: resources.Wood += count; break;
-                            case ResourceType.Clay: resources.Clay += count; break;
-                            default: break;
-                        }
+                        AddResources(resources, cell, settlement.Points);
                     }
                 }
+            }
+        }
+
+        private void AddResources(ResourceBag resources, Cell cell, int ammount)
+        {
+            switch (cell.Type)
+            {
+                case ResourceType.Wool: resources.Wool += ammount; break;
+                case ResourceType.Ore: resources.Ore += ammount; break;
+                case ResourceType.Grain: resources.Grain += ammount; break;
+                case ResourceType.Wood: resources.Wood += ammount; break;
+                case ResourceType.Clay: resources.Clay += ammount; break;
+                default: break;
             }
         }
 

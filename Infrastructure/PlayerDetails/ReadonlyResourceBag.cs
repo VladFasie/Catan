@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure.PlayerDetails
 {
-    public class ReadonlyResourceBag
+    public class ReadOnlyResourceBag
     {
         public int Total => Grain + Clay + Wood + Ore + Wool;
         public int Grain => _resource.Grain;
@@ -9,9 +9,25 @@
         public int Ore => _resource.Ore;
         public int Wool => _resource.Wool;
 
-        private ResourceBag _resource;
+        public int this[ResourceType type]
+        {
+            get
+            {
+                switch (type)
+                {
+                    case ResourceType.Clay: return Clay;
+                    case ResourceType.Grain: return Grain;
+                    case ResourceType.Ore: return Ore;
+                    case ResourceType.Wood: return Wood;
+                    case ResourceType.Wool: return Wool;
+                    default: return 0;
+                }
+            }
+        }
 
-        public ReadonlyResourceBag(ResourceBag resource)
+        private ResourceBag _resource;
+        
+        public ReadOnlyResourceBag(ResourceBag resource)
         {
             _resource = resource;
         }
