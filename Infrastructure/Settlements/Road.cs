@@ -6,9 +6,16 @@ namespace Infrastructure.Settlements
 {
     public class Road : IEquatable<Road>
     {
-        public PlayerColor Owner { get; set; }
-        public Tuple<int, int> A { get; set; }
-        public Tuple<int, int> B { get; set; }
+        public PlayerColor Owner { get; }
+        public Tuple<int, int> A { get; }
+        public Tuple<int, int> B { get; }
+
+        public Road(PlayerColor owner, Tuple<int, int> start, Tuple<int, int> stop)
+        {
+            Owner = owner;
+            A = start;
+            B = stop;
+        }
 
         public override bool Equals(object obj)
         {
