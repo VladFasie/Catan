@@ -3,11 +3,11 @@ using System;
 
 namespace Infrastructure.Settlements
 {
-    public abstract class BaseSettlement
+    public abstract class BaseSettlement : IAsset
     {
-        public PlayerColor Color { get; }
         public Tuple<int, int> Coordinates { get; }
         public abstract int Points { get; }
+        public PlayerColor Color { get; }
 
         protected BaseSettlement(PlayerColor color, Tuple<int, int> coordinates)
         {

@@ -8,10 +8,12 @@ namespace Infrastructure
 {
     public sealed class Map
     {
+        #region properties
         public MapSize Size { get; set; }
         public IList<Cell> Cells { get; set; }
         public IList<BaseSettlement> Settlements { get; set; }
         public IList<Road> Roads { get; set; }
+        #endregion
 
         public int PointsFor(PlayerColor color)
         {

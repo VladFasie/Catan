@@ -1,4 +1,5 @@
-﻿using Infrastructure.Extensions;
+﻿using Infrastructure.Commands;
+using Infrastructure.Extensions;
 using Infrastructure.PlayerDetails;
 using Infrastructure.Settlements;
 using System;
@@ -9,14 +10,20 @@ namespace Infrastructure
 {
     public sealed class Game
     {
-        public IEnumerable<BasePlayer> Players => _playerDict.Values.Select(x => x.Item1);
-        public IReadOnlyList<PlayerColor> AscendingOrder { get; private set; }
-        public int NumberOfPlayers => _playerDict.Keys.Count;
-        public Stack<Tuple<int, int>> DicesHistory { get; }
-
+        #region properties
         public Map Map { get; }
+        public int NumberOfPlayers => _playerDict.Keys.Count;
+        public IEnumerable<BasePlayer> Players => _playerDict.Values.Select(x => x.Item1);
+        public IReadOnlyList<PlayerColor> DescendingOrder { get; private set; }
+        public Stack<Tuple<int, int>> DicesHistory { get; }
+        public PlayerColor CurrentPlayer => DescendingOrder[_currentPlayerIndex];
+        #endregion
+
+        #region fields
         private Dictionary<PlayerColor, Tuple<BasePlayer, ResourceBag>> _playerDict;
         private Random _random;
+        private int _currentPlayerIndex = 0;
+        #endregion
 
         public Game(Map map)
         {
@@ -30,63 +37,27 @@ namespace Infrastructure
         public void AddPlayer(BasePlayer player)
         {
             var resources = new ResourceBag();
+            player.Action += new EventHandler<BasePlayer>(PlayerSetup);
             _playerDict[player.Color] = new Tuple<BasePlayer, ResourceBag>(player, resources);
-        }
-
-        private IEnumerable<Tuple<PlayerColor, int>> GenerateOrder(IEnumerable<PlayerColor> colors)
-        {
-            var numbers = new List<int>();
-            for (var i = 0; i < colors.Count(); ++i)
-            {
-                var dices = RollDices();
-                var sum = dices.Item1 + dices.Item2;
-                numbers.Add(sum);
-            }
-
-            return colors.Zip(numbers, (color, number) => new Tuple<PlayerColor, int>(color, number)).OrderBy(x => x.Item2);
-        }
-
-        private IEnumerable<PlayerColor> FindDrawsAndRemoveThem(IEnumerable<Tuple<PlayerColor, int>> order)
-        {
-            var counter = new int[13];
-            for (var i = 2; i <= 12; ++i)
-                counter[i] = order.Count(x => x.Item2 == i);
-
-            var result = new List<PlayerColor>();
-            for (var i = 2; i <= 12; ++i)
-            {
-                if (counter[i] == 1)
-                {
-                    result.Add(order.First(x => x.Item2 == i).Item1);
-                    continue;
-                }
-
-                if (counter[i] == 0)
-                    continue;
-
-                var draws = order.Where(x => x.Item2 == i).Select(x => x.Item1);
-                var tempOrder = GenerateOrder(draws);
-
-                foreach (var tmp in FindDrawsAndRemoveThem(tempOrder))
-                    result.Add(tmp);
-            }
-
-            return result;
         }
 
         public void InitialSetup()
         {
-            AscendingOrder = FindDrawsAndRemoveThem(GenerateOrder(_playerDict.Keys)).ToList().AsReadOnly();
+            DescendingOrder = FindDrawsAndRemoveThem(GenerateOrder(_playerDict.Keys)).ToList().AsReadOnly();
 
-            foreach (var color in AscendingOrder.Reverse())
+            foreach (var color in DescendingOrder)
             {
-                var buildings = _playerDict[color].Item1.PickFirstSettlementAndRoad(Map.AsReadOnly());
+                var player = _playerDict[color].Item1;
+                player.OnAction(player);
+                var buildings = player.PickFirstSettlementAndRoad();
                 InitialBuild(buildings);
             }
 
-            foreach (var color in AscendingOrder)
+            foreach (var color in DescendingOrder.Reverse())
             {
-                var buildings = _playerDict[color].Item1.PickSecondSettlementAndRoad(Map.AsReadOnly());
+                var player = _playerDict[color].Item1;
+                player.OnAction(player);
+                var buildings = player.PickSecondSettlementAndRoad();
                 InitialBuild(buildings);
 
                 var neighbourCells = CoordinatesHelper.NeighbourCellsCoordinatesForSettlement(buildings.Item1.Coordinates, Map.Size);
@@ -96,6 +67,49 @@ namespace Infrastructure
                     AddResources(_playerDict[color].Item2, cell, buildings.Item1.Points);
                 }
             }
+        }
+
+        public void PlayRound()
+        {
+            RollDicesAndGiveResources();
+
+            var dictEntry = _playerDict[CurrentPlayer];
+            var player = dictEntry.Item1;
+            var resources = dictEntry.Item2.AsReadOnly();
+
+            player.OnAction(player);
+            var commands = player.PlayTurn();
+
+            foreach (var command in commands)
+            {
+                // TODO PROCESS COMMAND
+                //command.Asset.Color = CurrentPlayer;
+                switch (command.Type)
+                {
+                    case CommandType.BUID_ROAD:
+                        {
+                            if (BuildingsCosts.CanBuildRoad(resources))
+                                BuildRoad((Road)command.Asset);
+                            break;
+                        }
+                    case CommandType.BUID_VILLAGE:
+                        {
+                            if (BuildingsCosts.CanBuildVillage(resources))
+                                BuildVillage((Village)command.Asset);
+                            break;
+                        }
+                    default: break;
+                }
+            }
+
+            _currentPlayerIndex = (_currentPlayerIndex + 1) % DescendingOrder.Count;
+        }
+
+        #region private methods
+        private void PlayerSetup(object sender, BasePlayer player)
+        {
+            player.Map = Map;
+            player.Resources = new ReadOnlyResourceBag(_playerDict[player.Color].Item2);
         }
 
         private void InitialBuild(Tuple<Village, Road> buildings)
@@ -121,8 +135,8 @@ namespace Infrastructure
         private bool VillageIsValid(Village village)
         {
             // is settlement coord & empty place & no neighbours occupied
-            return CoordinatesHelper.SettlementCoordinatesAreValid(village.Coordinates, Map.Size)   &&
-                (!Map.Settlements.Select(x => x.Coordinates).Contains(village.Coordinates))         &&
+            return CoordinatesHelper.SettlementCoordinatesAreValid(village.Coordinates, Map.Size) &&
+                (!Map.Settlements.Select(x => x.Coordinates).Contains(village.Coordinates)) &&
                 CoordinatesHelper.NeighbourSettlementsCoordinatesForSettlement(village.Coordinates, Map.Size).
                     All(x => !Map.Settlements.Select(y => y.Coordinates).Contains(x));
         }
@@ -142,7 +156,7 @@ namespace Infrastructure
                 CoordinatesHelper.NeighbourSettlementsCoordinatesForSettlement(road.A, Map.Size).Contains(road.B);
         }
 
-        public void RollDicesAndGiveResources()
+        private void RollDicesAndGiveResources()
         {
             var dices = RollDices();
             var sum = dices.Item1 + dices.Item2;
@@ -217,11 +231,53 @@ namespace Infrastructure
             }
         }
 
+        private IEnumerable<Tuple<PlayerColor, int>> GenerateOrder(IEnumerable<PlayerColor> colors)
+        {
+            var numbers = new List<int>();
+            for (var i = 0; i < colors.Count(); ++i)
+            {
+                var dices = RollDices();
+                var sum = dices.Item1 + dices.Item2;
+                numbers.Add(sum);
+            }
+
+            return colors.Zip(numbers, (color, number) => new Tuple<PlayerColor, int>(color, number)).OrderByDescending(x => x.Item2);
+        }
+
+        private IEnumerable<PlayerColor> FindDrawsAndRemoveThem(IEnumerable<Tuple<PlayerColor, int>> order)
+        {
+            var counter = new int[13];
+            for (var i = 2; i <= 12; ++i)
+                counter[i] = order.Count(x => x.Item2 == i);
+
+            var result = new List<PlayerColor>();
+            for (var i = 2; i <= 12; ++i)
+            {
+                if (counter[i] == 1)
+                {
+                    result.Add(order.First(x => x.Item2 == i).Item1);
+                    continue;
+                }
+
+                if (counter[i] == 0)
+                    continue;
+
+                var draws = order.Where(x => x.Item2 == i).Select(x => x.Item1);
+                var tempOrder = GenerateOrder(draws);
+
+                foreach (var tmp in FindDrawsAndRemoveThem(tempOrder))
+                    result.Add(tmp);
+            }
+
+            return result;
+        }
+
         private Tuple<int, int> RollDices()
         {
             var dices = _random.RollDices();
             DicesHistory.Push(dices);
             return dices;
         }
+        #endregion
     }
 }

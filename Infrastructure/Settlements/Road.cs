@@ -4,15 +4,15 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Settlements
 {
-    public class Road : IEquatable<Road>
+    public class Road : IEquatable<Road>, IAsset
     {
-        public PlayerColor Owner { get; }
         public Tuple<int, int> A { get; }
         public Tuple<int, int> B { get; }
+        public PlayerColor Color { get; }
 
-        public Road(PlayerColor owner, Tuple<int, int> start, Tuple<int, int> stop)
+        public Road(PlayerColor color, Tuple<int, int> start, Tuple<int, int> stop)
         {
-            Owner = owner;
+            Color = color;
             A = start;
             B = stop;
         }

@@ -9,6 +9,11 @@
         public int Ore { get; set; }
         public int Wool { get; set; }
 
+        public ReadOnlyResourceBag AsReadOnly()
+        {
+            return new ReadOnlyResourceBag(this);
+        }
+
         public override string ToString()
         {
             var result = "[";
