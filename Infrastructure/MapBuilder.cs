@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Extensions;
 using Infrastructure.MapConfigs;
+using Infrastructure.Settlements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace Infrastructure
             return new Map
             {
                 Size = size,
-                Cells = cells.AsReadOnly()
+                Cells = cells.AsReadOnly()                
             };
         }
 

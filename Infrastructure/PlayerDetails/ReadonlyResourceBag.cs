@@ -1,13 +1,15 @@
-﻿namespace Infrastructure.PlayerDetails
+﻿using System;
+
+namespace Infrastructure.PlayerDetails
 {
-    public class ReadOnlyResourceBag
+    public class ReadOnlyResourceBag : IEquatable<ReadOnlyResourceBag>
     {
         public int Total => Grain + Clay + Wood + Ore + Wool;
-        public int Grain => _resource.Grain;
-        public int Clay => _resource.Clay;
-        public int Wood => _resource.Wood;
-        public int Ore => _resource.Ore;
-        public int Wool => _resource.Wool;
+        public int Grain { get; }
+        public int Clay { get; }
+        public int Wood { get; }
+        public int Ore { get; }
+        public int Wool { get; }
 
         public int this[ResourceType type]
         {
@@ -24,17 +26,26 @@
                 }
             }
         }
-
-        private ResourceBag _resource;
         
         public ReadOnlyResourceBag(ResourceBag resource)
         {
-            _resource = resource;
+            Grain = resource.Grain;
+            Clay = resource.Clay;
+            Wood = resource.Wood;
+            Ore = resource.Ore;
+            Wool = resource.Wool;
         }
 
-        public override string ToString()
+        public bool Equals(ReadOnlyResourceBag other)
         {
-            return _resource.ToString();
+            if (other == null)
+                return false;
+
+            return Clay == other.Clay &&
+                Grain == other.Grain &&
+                Ore == other.Ore &&
+                Wood == other.Wood &&
+                Wool == other.Wool;
         }
     }
 }

@@ -82,13 +82,13 @@ namespace Infrastructure
             var config = ConfigByMapSize(size);
             var offsets = ApplyOffsets(settlement, _settlementToSettlementPartialOffset);
 
-            var result = offsets.Intersect(config.CellCoordinates);
+            var result = offsets.Intersect(config.SettlementsCoordinates);
 
             var left = new Tuple<int, int>(settlement.Item1 - 1, settlement.Item2);
-            var right = new Tuple<int, int>(settlement.Item1 - 1, settlement.Item2);
+            var right = new Tuple<int, int>(settlement.Item1 + 1, settlement.Item2);
 
             var hasCellInLeft = config.CellCoordinates.IndexOf(left) != -1;
-            var hasCellInRight = config.CellCoordinates.IndexOf(left) != -1;
+            var hasCellInRight = config.CellCoordinates.IndexOf(right) != -1;
 
             if (!hasCellInLeft)
             {
@@ -98,7 +98,7 @@ namespace Infrastructure
                     result.Append(possibleLeftSettlement);
             }
 
-            if (!hasCellInLeft)
+            if (!hasCellInRight)
             {
                 var possibleRightSettlement = new Tuple<int, int>(settlement.Item1 + 2, settlement.Item2);
                 var settlementExists = config.SettlementsCoordinates.IndexOf(possibleRightSettlement) != -1;

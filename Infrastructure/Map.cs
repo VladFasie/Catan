@@ -15,6 +15,13 @@ namespace Infrastructure
         public IList<Road> Roads { get; set; }
         #endregion
 
+        public Map()
+        {
+            Cells = new List<Cell>();
+            Settlements = new List<BaseSettlement>();
+            Roads = new List<Road>();
+        }
+
         public int PointsFor(PlayerColor color)
         {
             return Settlements.Where(settlement => settlement.Color == color).Select(settlement => settlement.Points).Sum();

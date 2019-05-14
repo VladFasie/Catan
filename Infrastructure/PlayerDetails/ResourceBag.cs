@@ -9,6 +9,34 @@
         public int Ore { get; set; }
         public int Wool { get; set; }
 
+        public int this[ResourceType type]
+        {
+            get
+            {
+                switch (type)
+                {
+                    case ResourceType.Clay: return Clay;
+                    case ResourceType.Grain: return Grain;
+                    case ResourceType.Ore: return Ore;
+                    case ResourceType.Wood: return Wood;
+                    case ResourceType.Wool: return Wool;
+                    default: return 0;
+                }
+            }
+            set
+            {
+                switch (type)
+                {
+                    case ResourceType.Clay: Clay = value; break;
+                    case ResourceType.Grain: Grain = value; break;
+                    case ResourceType.Ore: Ore = value; break;
+                    case ResourceType.Wood: Wood = value; break;
+                    case ResourceType.Wool: Wool = value; break;
+                    default: break;
+                }
+            }
+        }
+
         public ReadOnlyResourceBag AsReadOnly()
         {
             return new ReadOnlyResourceBag(this);

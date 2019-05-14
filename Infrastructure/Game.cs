@@ -2,6 +2,7 @@
 using Infrastructure.Extensions;
 using Infrastructure.PlayerDetails;
 using Infrastructure.Settlements;
+using Infrastructure.Tradeing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,6 @@ namespace Infrastructure
     public sealed class Game
     {
         #region properties
-        public Map Map { get; }
         public int NumberOfPlayers => _playerDict.Keys.Count;
         public IEnumerable<BasePlayer> Players => _playerDict.Values.Select(x => x.Item1);
         public IReadOnlyList<PlayerColor> DescendingOrder { get; private set; }
@@ -20,8 +20,9 @@ namespace Infrastructure
         #endregion
 
         #region fields
-        private Dictionary<PlayerColor, Tuple<BasePlayer, ResourceBag>> _playerDict;
-        private Random _random;
+        private readonly Map Map;
+        private readonly Dictionary<PlayerColor, Tuple<BasePlayer, ResourceBag>> _playerDict;
+        private readonly Random _random;
         private int _currentPlayerIndex = 0;
         #endregion
 
@@ -30,14 +31,16 @@ namespace Infrastructure
             DicesHistory = new Stack<Tuple<int, int>>();
             _random = new Random();
             _playerDict = new Dictionary<PlayerColor, Tuple<BasePlayer, ResourceBag>>();
-
+            SimpleTradeSystem.PlayerDict = _playerDict;
             Map = map;
         }
 
         public void AddPlayer(BasePlayer player)
         {
             var resources = new ResourceBag();
+            var tradeSystem = new SimpleTradeSystem(player);
             player.Action += new EventHandler<BasePlayer>(PlayerSetup);
+            player.TradeSystem = tradeSystem;
             _playerDict[player.Color] = new Tuple<BasePlayer, ResourceBag>(player, resources);
         }
 
@@ -83,7 +86,9 @@ namespace Infrastructure
             foreach (var command in commands)
             {
                 // TODO PROCESS COMMAND
-                //command.Asset.Color = CurrentPlayer;
+                if (command.Asset.Color != CurrentPlayer)
+                    throw new Exception($"bad command {command.Asset}");
+
                 switch (command.Type)
                 {
                     case CommandType.BUID_ROAD:
@@ -96,6 +101,12 @@ namespace Infrastructure
                         {
                             if (BuildingsCosts.CanBuildVillage(resources))
                                 BuildVillage((Village)command.Asset);
+                            break;
+                        }
+                    case CommandType.UPGRADE_VILLAGE:
+                        {
+                            if (BuildingsCosts.CanBuildCIty(resources))
+                                BuildCity((City)command.Asset);
                             break;
                         }
                     default: break;
@@ -156,6 +167,22 @@ namespace Infrastructure
                 CoordinatesHelper.NeighbourSettlementsCoordinatesForSettlement(road.A, Map.Size).Contains(road.B);
         }
 
+        private void BuildCity(City asset)
+        {
+            var villageToReplace = CityIsValid(asset);
+            if (villageToReplace == null)
+                throw new Exception("can't buid city");
+
+            Map.Settlements.Remove(villageToReplace);
+            Map.Settlements.Add(asset);
+        }
+
+        private BaseSettlement CityIsValid(City asset)
+        {
+            // already exists village
+            return Map.Settlements.FirstOrDefault(x => x.Points == 1 && x.Coordinates.Equals(asset.Coordinates));
+        }
+
         private void RollDicesAndGiveResources()
         {
             var dices = RollDices();
@@ -179,16 +206,12 @@ namespace Infrastructure
                 var cellCoords = CoordinatesHelper.CellCoordinatesByIndexAndSize(i, Map.Size);
                 var settlemenstCoord = CoordinatesHelper.NeighbourSettlementsCoordinatesForCell(cellCoords, Map.Size);
 
-                foreach (var player in Players)
+                foreach (var settlement in Map.Settlements)
                 {
-                    var resources = _playerDict[player.Color].Item2;
-                    foreach (var settlement in Map.Settlements)
-                    {
-                        if (!settlemenstCoord.Contains(settlement.Coordinates))
-                            continue;
-
-                        AddResources(resources, cell, settlement.Points);
-                    }
+                    if (!settlemenstCoord.Contains(settlement.Coordinates))
+                        continue;
+                    var resources = _playerDict[settlement.Color].Item2;
+                    AddResources(resources, cell, settlement.Points);
                 }
             }
         }

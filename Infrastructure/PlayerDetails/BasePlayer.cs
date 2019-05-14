@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Commands;
 using Infrastructure.Settlements;
+using Infrastructure.Tradeing;
 using System;
 using System.Collections.Generic;
 
@@ -11,7 +12,7 @@ namespace Infrastructure.PlayerDetails
         public ReadOnlyResourceBag Resources { get; set; }
         public Map Map { get; set; }
         public PlayerColor Color { get; }
-        protected ITradeSystem TradeSystem { get; }
+        public ITradeSystem TradeSystem { get; set; }
 
         public virtual void OnAction(BasePlayer player)
         {
@@ -31,5 +32,9 @@ namespace Infrastructure.PlayerDetails
         public abstract Tuple<Village, Road> PickSecondSettlementAndRoad();
 
         public abstract IEnumerable<Command> PlayTurn();
+
+        public abstract bool RespondTo(Trade trade, PlayerColor fromPlayer);
+
+        public abstract Tuple<int, int> MoveThief();
     }
 }
